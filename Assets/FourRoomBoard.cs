@@ -7,20 +7,26 @@ public class FourRoomBoard : MonoBehaviour
     [SerializeField] private Collider2D playerCollider;
     [SerializeField] private float snapDistance = 0.8f;
 
-    private readonly int[] from = { 0, 1, 2 };
-    private readonly int[] to = { 1, 2, 3 };
-    private readonly Vector3[] offsets =
+    // Side order: right, up, left, down.
+    private readonly string[] wallNames =
     {
-        new Vector3(4f, 0f, 0f),
-        new Vector3(0f, 4f, 0f),
-        new Vector3(4f, 0f, 0f)
+        "RightWall", "Ceiling", "LeftWall", "Ground"
     };
+
+    private readonly Vector3[] sideDirections =
+    {
+        Vector3.right, Vector3.up, Vector3.left, Vector3.down
+    };
+
+    private const float RoomSize = 4f;
+
+    private GameObject[,] walls;
+    private bool[,] gates;
 
     private SpriteRenderer[] areas;
     private SpriteRenderer[][] visuals;
     private Color[][] colors;
     private Collider2D[][] colliders;
-    private GameObject[,] doors;
 
     private Camera sceneCamera;
     private int dragging = -1;
@@ -28,9 +34,24 @@ public class FourRoomBoard : MonoBehaviour
     private Vector3 dragOffset;
     private bool[] colliderStates;
     private bool completed;
+    private Rigidbody2D playerBody;
+    private Vector2 startPosition;
+    [SerializeField, Min(0.1f)] private float restartDelay = 1.5f;
+    private bool isRestarting;
+    private float restartTimer;
+
+    [SerializeField, Min(1f)] private float dragThresholdPixels = 8f;
+    private int pressedRoom = -1;
+    private Vector2 pressScreen;
+    private Vector3 pressWorld;
+    private bool gestureMoved;
+    private string rotationMessage;
+    private float rotationMessageUntil;
 
     private void Start()
     {
+        playerBody = playerCollider.attachedRigidbody;
+        startPosition = playerBody.position;
         sceneCamera = Camera.main;
         areas = new SpriteRenderer[4];
         visuals = new SpriteRenderer[4][];
@@ -50,13 +71,20 @@ public class FourRoomBoard : MonoBehaviour
                 colors[i][j] = visuals[i][j].color;
         }
 
-        doors = new GameObject[3, 2];
-        doors[0, 0] = rooms[0].Find("RightWall").gameObject;
-        doors[0, 1] = rooms[1].Find("LeftWall").gameObject;
-        doors[1, 0] = rooms[1].Find("Ceiling").gameObject;
-        doors[1, 1] = rooms[2].Find("Ground").gameObject;
-        doors[2, 0] = rooms[2].Find("RightWall").gameObject;
-        doors[2, 1] = rooms[3].Find("LeftWall").gameObject;
+        walls = new GameObject[rooms.Length, 4];
+        gates = new bool[rooms.Length, 4];
+
+        for (int room = 0; room < rooms.Length; room++)
+        {
+            for (int side = 0; side < 4; side++)
+            {
+                GameObject wall = rooms[room].Find(wallNames[side]).gameObject;
+                walls[room, side] = wall;
+
+                GateVisual gate = wall.GetComponent<GateVisual>();
+                gates[room, side] = gate != null && gate.enabled;
+            }
+        }
 
         RefreshConnections();
         Physics2D.SyncTransforms();
@@ -64,6 +92,45 @@ public class FourRoomBoard : MonoBehaviour
 
     private void Update()
     {
+        // Pause gameplay briefly so the death is noticeable.
+        if (isRestarting)
+        {
+            restartTimer -= Time.unscaledDeltaTime;
+
+            if (restartTimer <= 0f)
+            {
+                Vector3 resetPosition = playerBody.transform.position;
+                resetPosition.x = startPosition.x;
+                resetPosition.y = startPosition.y;
+
+                playerBody.transform.position = resetPosition;
+                playerBody.gameObject.SetActive(true);
+                playerBody.position = startPosition;
+                playerBody.linearVelocity = Vector2.zero;
+                playerBody.angularVelocity = 0f;
+
+                Physics2D.SyncTransforms();
+                isRestarting = false;
+            }
+
+            return;
+        }
+
+        if (!IsPlayerInsideAnyRoom())
+        {
+            // Cancel an unfinished drag and keep the last placed layout.
+            CancelRoomGesture();
+
+            completed = false;
+            isRestarting = true;
+            restartTimer = restartDelay;
+
+            playerBody.linearVelocity = Vector2.zero;
+            playerBody.angularVelocity = 0f;
+            playerBody.gameObject.SetActive(false);
+            return;
+        }
+
         // Complete the level when the entire player enters Room D.
         Bounds goal = areas[3].bounds;
         Bounds player = playerCollider.bounds;
@@ -72,8 +139,16 @@ public class FourRoomBoard : MonoBehaviour
             player.min.y > goal.min.y && player.max.y < goal.max.y)
             completed = true;
 
+        HandleRoomMouse();
+    }
+
+    private void HandleRoomMouse()
+    {
         if (Mouse.current == null)
+        {
+            CancelRoomGesture();
             return;
+        }
 
         Vector2 screen = Mouse.current.position.ReadValue();
         Vector3 mouse = sceneCamera.ScreenToWorldPoint(
@@ -81,80 +156,334 @@ public class FourRoomBoard : MonoBehaviour
         );
         mouse.z = 0f;
 
-        if (dragging < 0 && Mouse.current.leftButton.wasPressedThisFrame)
+        // Right-click rotates clockwise without starting a drag.
+        // Ignore it while a left-button gesture is in progress.
+        if (pressedRoom < 0 && dragging < 0 &&
+            !Mouse.current.leftButton.isPressed &&
+            Mouse.current.rightButton.wasPressedThisFrame)
         {
-            // Only the two middle rooms can move.
             for (int i = 1; i <= 2; i++)
             {
                 Bounds area = areas[i].bounds;
-
                 if (mouse.x >= area.min.x && mouse.x <= area.max.x &&
-                    mouse.y >= area.min.y && mouse.y <= area.max.y &&
-                    CanDrag(i))
+                    mouse.y >= area.min.y && mouse.y <= area.max.y)
                 {
-                    BeginDrag(i, mouse);
+                    RotateRoom(i, -1);
+                    break;
+                }
+            }
+
+            return;
+        }
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            CancelRoomGesture();
+
+            // Capture the room on press; do not rotate or drag yet.
+            for (int i = 1; i <= 2; i++)
+            {
+                Bounds area = areas[i].bounds;
+                if (mouse.x >= area.min.x && mouse.x <= area.max.x &&
+                    mouse.y >= area.min.y && mouse.y <= area.max.y)
+                {
+                    pressedRoom = i;
+                    pressScreen = screen;
+                    pressWorld = mouse;
                     break;
                 }
             }
         }
 
-        if (dragging < 0)
+        if (pressedRoom < 0)
             return;
 
-        Vector3 position = SnapPosition(dragging, mouse + dragOffset);
-        rooms[dragging].position = position;
+        float threshold = Mathf.Max(1f, dragThresholdPixels);
+        if (!gestureMoved && (screen - pressScreen).sqrMagnitude >= threshold * threshold)
+        {
+            // A blocked drag must never become a rotation on release.
+            gestureMoved = true;
+            if (CanDrag(pressedRoom))
+                BeginDrag(pressedRoom, pressWorld);
+        }
 
-        bool valid = CanPlace(dragging, position);
-        SetAppearance(dragging, true, valid);
+        bool valid = false;
+        if (dragging >= 0)
+        {
+            Vector3 position = SnapPosition(dragging, mouse + dragOffset);
+            rooms[dragging].position = position;
+            valid = CanPlace(dragging, position);
+            SetAppearance(dragging, true, valid);
+        }
 
         if (!Mouse.current.leftButton.isPressed)
-            EndDrag(valid);
+        {
+            if (dragging >= 0)
+                EndDrag(valid);
+            else if (!gestureMoved)
+                RotateRoom(pressedRoom, 1);
+
+            pressedRoom = -1;
+            gestureMoved = false;
+        }
     }
 
-    private bool IsConnected(int link)
+    private void CancelRoomGesture()
     {
-        if (dragging == from[link] || dragging == to[link])
+        if (dragging >= 0)
+            EndDrag(false);
+
+        pressedRoom = -1;
+        gestureMoved = false;
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+            CancelRoomGesture();
+    }
+
+    private void RotateRoom(int index, int direction)
+    {
+        if (index < 1 || index > 2 || dragging >= 0)
+            return;
+
+        Physics2D.SyncTransforms();
+        bool carryPlayer = Overlaps(playerCollider.bounds, areas[index].bounds);
+
+        // Do not rotate either room while the player straddles a passage.
+        if (carryPlayer && !ContainsPlayer(index))
+        {
+            ShowRotationMessage("Move fully into one room to rotate.");
+            return;
+        }
+
+        Quaternion previousRoomRotation = rooms[index].rotation;
+        Vector2 previousPlayerPosition = playerBody.position;
+        float previousPlayerRotation = playerBody.rotation;
+        Vector2 previousVelocity = playerBody.linearVelocity;
+        float previousAngularVelocity = playerBody.angularVelocity;
+
+        float angle = Mathf.Round(rooms[index].eulerAngles.z / 90f) * 90f;
+        rooms[index].rotation = Quaternion.Euler(0f, 0f, angle + direction * 90f);
+
+        if (carryPlayer)
+        {
+            // Carry the player in the selected direction while keeping the body upright.
+            Vector2 center = rooms[index].position;
+            Vector2 offset = previousPlayerPosition - center;
+            Vector2 rotated = center + new Vector2(-direction * offset.y, direction * offset.x);
+            SetPlayerPose(rotated, 0f);
+        }
+
+        RefreshConnections();
+        Physics2D.SyncTransforms();
+
+        if (carryPlayer && !ResolveRotationOverlap(index))
+        {
+            // Restore the complete previous state if no nearby safe pose exists.
+            rooms[index].rotation = previousRoomRotation;
+            SetPlayerPose(previousPlayerPosition, previousPlayerRotation);
+            playerBody.linearVelocity = previousVelocity;
+            playerBody.angularVelocity = previousAngularVelocity;
+            RefreshConnections();
+            Physics2D.SyncTransforms();
+            ShowRotationMessage("Not enough space to rotate here.");
+            return;
+        }
+
+        if (carryPlayer)
+        {
+            // Let world gravity start a fresh downward fall after the turn.
+            playerBody.linearVelocity = Vector2.zero;
+            playerBody.angularVelocity = 0f;
+            playerBody.WakeUp();
+        }
+
+        rotationMessageUntil = 0f;
+    }
+
+    private void SetPlayerPose(Vector2 position, float angle)
+    {
+        Vector3 worldPosition = playerBody.transform.position;
+        worldPosition.x = position.x;
+        worldPosition.y = position.y;
+        playerBody.transform.SetPositionAndRotation(
+            worldPosition, Quaternion.Euler(0f, 0f, angle));
+        playerBody.position = position;
+        playerBody.rotation = angle;
+        Physics2D.SyncTransforms();
+    }
+
+    private bool ContainsPlayer(int room)
+    {
+        const float tolerance = 0.001f;
+        Bounds area = areas[room].bounds;
+        Bounds player = playerCollider.bounds;
+        return player.min.x >= area.min.x - tolerance &&
+               player.max.x <= area.max.x + tolerance &&
+               player.min.y >= area.min.y - tolerance &&
+               player.max.y <= area.max.y + tolerance;
+    }
+
+    private bool ResolveRotationOverlap(int room)
+    {
+        const float clearance = 0.002f;
+        Vector2 rotatedPosition = playerBody.position;
+
+        // Upright rectangular players may need a small correction after a turn.
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            Bounds area = areas[room].bounds;
+            Bounds player = playerCollider.bounds;
+            Vector2 desiredCenter = player.center;
+            desiredCenter.x = Mathf.Clamp(desiredCenter.x,
+                area.min.x + player.extents.x + clearance,
+                area.max.x - player.extents.x - clearance);
+            desiredCenter.y = Mathf.Clamp(desiredCenter.y,
+                area.min.y + player.extents.y + clearance,
+                area.max.y - player.extents.y - clearance);
+
+            Vector2 adjustment = desiredCenter - (Vector2)player.center;
+            if (adjustment.sqrMagnitude > 0.00000001f)
+                SetPlayerPose(playerBody.position + adjustment, 0f);
+
+            bool overlapping = false;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                foreach (Collider2D solid in colliders[i])
+                {
+                    if (!solid.enabled || !solid.gameObject.activeInHierarchy ||
+                        solid.isTrigger || solid == playerCollider)
+                        continue;
+
+                    ColliderDistance2D separation = playerCollider.Distance(solid);
+                    if (!separation.isValid)
+                        return false;
+                    if (!separation.isOverlapped)
+                        continue;
+
+                    overlapping = true;
+                    Vector2 correction =
+                        separation.normal * (separation.distance - clearance);
+                    SetPlayerPose(playerBody.position + correction, 0f);
+                }
+            }
+
+            // Do not resolve a blocked rotation by teleporting across a room.
+            if (Vector2.Distance(playerBody.position, rotatedPosition) > 0.35f)
+                return false;
+
+            if (!overlapping && ContainsPlayer(room))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ShowRotationMessage(string message)
+    {
+        rotationMessage = message;
+        rotationMessageUntil = Time.unscaledTime + 1.5f;
+    }
+
+    private bool IsPlayerInsideAnyRoom()
+    {
+        Vector3 playerCenter = playerCollider.bounds.center;
+
+        for (int i = 0; i < rooms.Length; i++)
+        {
+            // A dragged preview does not count as a playable room.
+            if (i == dragging)
+                continue;
+
+            SpriteRenderer area = areas[i];
+
+            if (!area.gameObject.activeInHierarchy)
+                continue;
+
+            Vector3 localPoint =
+                area.transform.InverseTransformPoint(playerCenter);
+            Bounds localBounds = area.sprite.bounds;
+
+            if (localPoint.x >= localBounds.min.x &&
+                localPoint.x <= localBounds.max.x &&
+                localPoint.y >= localBounds.min.y &&
+                localPoint.y <= localBounds.max.y)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Vector3 GateDirection(int room, int side)
+    {
+        // Use exact cardinal directions to avoid rotation rounding drift.
+        int turns = Mathf.RoundToInt(rooms[room].eulerAngles.z / 90f);
+        int worldSide = ((side + turns) % 4 + 4) % 4;
+        return sideDirections[worldSide];
+    }
+
+    private bool HasFacingGate(int room, Vector3 direction)
+    {
+        for (int side = 0; side < 4; side++)
+        {
+            if (gates[room, side] &&
+                Vector3.Dot(GateDirection(room, side), direction) > 0.99f)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsConnected(int first, int side, int second)
+    {
+        if (first == second || first == dragging || second == dragging)
             return false;
 
-        Vector3 expected = rooms[from[link]].position + offsets[link];
-        return Vector3.Distance(rooms[to[link]].position, expected) < 0.01f;
+        if (!gates[first, side])
+            return false;
+
+        Vector3 direction = GateDirection(first, side);
+        if (!HasFacingGate(second, -direction))
+            return false;
+
+        Vector3 expected = rooms[first].position + direction * RoomSize;
+        return Vector3.Distance(rooms[second].position, expected) < 0.01f;
     }
 
     private void RefreshConnections()
     {
-        for (int link = 0; link < 3; link++)
+        for (int room = 0; room < rooms.Length; room++)
         {
-            bool closed = !IsConnected(link);
-            doors[link, 0].SetActive(closed);
-            doors[link, 1].SetActive(closed);
+            for (int side = 0; side < 4; side++)
+            {
+                if (!gates[room, side])
+                    continue;
+
+                bool connected = false;
+
+                for (int other = 0; other < rooms.Length; other++)
+                {
+                    if (IsConnected(room, side, other))
+                    {
+                        connected = true;
+                        break;
+                    }
+                }
+
+                // Hide connected gates and show exposed gates.
+                walls[room, side].SetActive(!connected);
+            }
         }
     }
 
     private bool CanDrag(int index)
     {
-        Bounds player = playerCollider.bounds;
-        player.Expand(0.04f);
-
-        if (Overlaps(player, areas[index].bounds))
-            return false;
-
-        for (int link = 0; link < 3; link++)
-        {
-            if (from[link] != index && to[link] != index)
-                continue;
-
-            if (!IsConnected(link))
-                continue;
-
-            // Protect both sides of an occupied passage.
-            for (int side = 0; side < 2; side++)
-            {
-                if (Overlaps(player, WallBounds(doors[link, side])))
-                    return false;
-            }
-        }
-
-        return true;
+        // Lock the room only while the player's body overlaps its area.
+        return !Overlaps(playerCollider.bounds, areas[index].bounds);
     }
 
     private Bounds WallBounds(GameObject wall)
@@ -193,23 +522,30 @@ public class FourRoomBoard : MonoBehaviour
         Vector3 result = desired;
         float nearest = snapDistance;
 
-        for (int link = 0; link < 3; link++)
+        for (int other = 0; other < rooms.Length; other++)
         {
-            Vector3 target;
-
-            if (index == to[link])
-                target = rooms[from[link]].position + offsets[link];
-            else if (index == from[link])
-                target = rooms[to[link]].position - offsets[link];
-            else
+            if (other == index)
                 continue;
 
-            float distance = Vector3.Distance(desired, target);
-
-            if (distance <= nearest && CanPlace(index, target))
+            for (int side = 0; side < 4; side++)
             {
-                nearest = distance;
-                result = target;
+                if (!gates[index, side])
+                    continue;
+
+                Vector3 direction = GateDirection(index, side);
+                if (!HasFacingGate(other, -direction))
+                    continue;
+
+                // Align gates using their current world-space directions.
+                Vector3 target = rooms[other].position - direction * RoomSize;
+
+                float distance = Vector3.Distance(desired, target);
+
+                if (distance <= nearest && CanPlace(index, target))
+                {
+                    nearest = distance;
+                    result = target;
+                }
             }
         }
 
@@ -228,7 +564,6 @@ public class FourRoomBoard : MonoBehaviour
         }
 
         Bounds player = playerCollider.bounds;
-        player.Expand(0.04f);
 
         if (Overlaps(candidate, player))
             return false;
@@ -276,27 +611,34 @@ public class FourRoomBoard : MonoBehaviour
 
     private static bool Overlaps(Bounds a, Bounds b)
     {
-        return a.min.x < b.max.x && a.max.x > b.min.x &&
-               a.min.y < b.max.y && a.max.y > b.min.y;
+        const float tolerance = 0.001f;
+        return a.min.x < b.max.x - tolerance &&
+               a.max.x > b.min.x + tolerance &&
+               a.min.y < b.max.y - tolerance &&
+               a.max.y > b.min.y + tolerance;
     }
 
     private void OnDisable()
     {
-        if (dragging >= 0)
-            EndDrag(false);
+        CancelRoomGesture();
     }
 
     private void OnGUI()
     {
-        if (!completed)
+        bool showRotationMessage = Time.unscaledTime < rotationMessageUntil;
+        if (!completed && !isRestarting && !showRotationMessage)
             return;
 
         GUIStyle style = new GUIStyle(GUI.skin.box);
-        style.fontSize = 28;
+        style.fontSize = !completed && !isRestarting ? 22 : 28;
+
+        string message = isRestarting
+            ? "You Died — Restarting..."
+            : completed ? "Level Complete" : rotationMessage;
 
         GUI.Box(
-            new Rect(Screen.width * 0.5f - 150f, 20f, 300f, 55f),
-            "Level Complete",
+            new Rect(Screen.width * 0.5f - 270f, 20f, 540f, 60f),
+            message,
             style
         );
     }

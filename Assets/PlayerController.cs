@@ -61,4 +61,11 @@ public class PlayerController : MonoBehaviour
 
         return false;
     }
+
+    private void OnDisable()
+    {
+        // Clear pending input when the player is deactivated.
+        moveInput = 0f;
+        jumpRequested = false;
+    }
 }
