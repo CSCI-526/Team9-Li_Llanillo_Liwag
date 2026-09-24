@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 179452459}
   - component: {fileID: 179452461}
   - component: {fileID: 179452460}
+  - component: {fileID: 179452462}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -257,6 +258,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &179452462
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 179452458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 0
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &235677436
 GameObject:
   m_ObjectHideFlags: 0
@@ -268,6 +285,7 @@ GameObject:
   - component: {fileID: 235677439}
   - component: {fileID: 235677438}
   - component: {fileID: 235677437}
+  - component: {fileID: 235677440}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -395,6 +413,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1890628165}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &235677440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 235677436}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 0
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &390236066
 GameObject:
   m_ObjectHideFlags: 0
@@ -572,6 +606,7 @@ GameObject:
   - component: {fileID: 423128938}
   - component: {fileID: 423128940}
   - component: {fileID: 423128939}
+  - component: {fileID: 423128941}
   m_Layer: 0
   m_Name: Ceiling
   m_TagString: Untagged
@@ -699,6 +734,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &423128941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 423128937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 0
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1262,6 +1313,7 @@ GameObject:
   - component: {fileID: 826445153}
   - component: {fileID: 826445155}
   - component: {fileID: 826445154}
+  - component: {fileID: 826445156}
   m_Layer: 0
   m_Name: RightWall
   m_TagString: Untagged
@@ -1389,6 +1441,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &826445156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 826445152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 1
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &878717581
 GameObject:
   m_ObjectHideFlags: 0
@@ -1425,6 +1493,8 @@ MonoBehaviour:
   - {fileID: 718293993}
   playerCollider: {fileID: 1140098373}
   snapDistance: 0.8
+  restartDelay: 1.5
+  dragThresholdPixels: 8
 --- !u!4 &878717583
 Transform:
   m_ObjectHideFlags: 0
@@ -1482,6 +1552,7 @@ GameObject:
   - component: {fileID: 924136984}
   - component: {fileID: 924136986}
   - component: {fileID: 924136985}
+  - component: {fileID: 924136987}
   m_Layer: 0
   m_Name: LeftWall
   m_TagString: Untagged
@@ -1609,6 +1680,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &924136987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 924136983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 1
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &1051046693
 GameObject:
   m_ObjectHideFlags: 0
@@ -2259,6 +2346,7 @@ GameObject:
   - component: {fileID: 1332557827}
   - component: {fileID: 1332557829}
   - component: {fileID: 1332557828}
+  - component: {fileID: 1332557830}
   m_Layer: 0
   m_Name: Ceiling
   m_TagString: Untagged
@@ -2386,6 +2474,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1332557830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1332557826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 0
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &1404207255
 GameObject:
   m_ObjectHideFlags: 0
@@ -2397,6 +2501,7 @@ GameObject:
   - component: {fileID: 1404207256}
   - component: {fileID: 1404207258}
   - component: {fileID: 1404207257}
+  - component: {fileID: 1404207259}
   m_Layer: 0
   m_Name: Ceiling
   m_TagString: Untagged
@@ -2524,6 +2629,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1404207259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404207255}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 0
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &1411356980
 GameObject:
   m_ObjectHideFlags: 0
@@ -2673,6 +2794,7 @@ GameObject:
   - component: {fileID: 1435138811}
   - component: {fileID: 1435138813}
   - component: {fileID: 1435138812}
+  - component: {fileID: 1435138814}
   m_Layer: 0
   m_Name: LeftWall
   m_TagString: Untagged
@@ -2800,6 +2922,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1435138814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1435138810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 1
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &1578530418
 GameObject:
   m_ObjectHideFlags: 0
@@ -3087,6 +3225,7 @@ GameObject:
   - component: {fileID: 1730674420}
   - component: {fileID: 1730674422}
   - component: {fileID: 1730674421}
+  - component: {fileID: 1730674423}
   m_Layer: 0
   m_Name: RightWall
   m_TagString: Untagged
@@ -3214,6 +3353,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1730674423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1730674419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 1
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &1768954547
 GameObject:
   m_ObjectHideFlags: 0
@@ -3225,6 +3380,7 @@ GameObject:
   - component: {fileID: 1768954548}
   - component: {fileID: 1768954550}
   - component: {fileID: 1768954549}
+  - component: {fileID: 1768954551}
   m_Layer: 0
   m_Name: RightWall
   m_TagString: Untagged
@@ -3352,6 +3508,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1768954551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1768954547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bafddd9ea31e4cc89505c9d3a201c83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GateVisual
+  vertical: 1
+  waveCount: 6
+  waveHeight: 0.25
+  lineThickness: 0.15
 --- !u!1 &1839270861
 GameObject:
   m_ObjectHideFlags: 0
