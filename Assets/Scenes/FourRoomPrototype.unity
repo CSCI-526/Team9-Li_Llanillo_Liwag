@@ -529,8 +529,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 394016527}
-  - component: {fileID: 394016528}
-  - component: {fileID: 394016529}
   m_Layer: 0
   m_Name: Room_B
   m_TagString: Untagged
@@ -559,42 +557,6 @@ Transform:
   - {fileID: 1067655744}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &394016528
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 394016526}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 454fb0f2120a241888db4529e2a6695e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomDrag
-  dragArea: {fileID: 1411356983}
-  placementArea: {fileID: 1411356981}
-  blockedAreas:
-  - {fileID: 1285690275}
-  playerCollider: {fileID: 1140098373}
-  snapTarget: {fileID: 893183815}
-  snapDistance: 0.8
---- !u!114 &394016529
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 394016526}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 516540e649bbc49ee8d6090e26682189, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomConnection
-  snapTarget: {fileID: 893183815}
-  roomArea: {fileID: 1411356981}
-  playerCollider: {fileID: 1140098373}
-  roomDoor: {fileID: 1435138810}
-  fixedDoor: {fileID: 1768954547}
 --- !u!1 &423128937
 GameObject:
   m_ObjectHideFlags: 0
@@ -1151,7 +1113,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 718293993}
-  - component: {fileID: 718293992}
   m_Layer: 0
   m_Name: Room_D
   m_TagString: Untagged
@@ -1159,24 +1120,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &718293992
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 718293991}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 454fb0f2120a241888db4529e2a6695e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomDrag
-  dragArea: {fileID: 1584065131}
-  placementArea: {fileID: 0}
-  blockedAreas: []
-  playerCollider: {fileID: 0}
-  snapTarget: {fileID: 0}
-  snapDistance: 0.8
 --- !u!4 &718293993
 Transform:
   m_ObjectHideFlags: 0
@@ -1543,37 +1486,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &893183814
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 893183815}
-  m_Layer: 0
-  m_Name: RightSnapTarget
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &893183815
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 893183814}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1869719710}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &924136983
 GameObject:
@@ -3796,7 +3708,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1869719710}
-  - component: {fileID: 1869719711}
   m_Layer: 0
   m_Name: Room_A
   m_TagString: Untagged
@@ -3822,27 +3733,8 @@ Transform:
   - {fileID: 775545778}
   - {fileID: 1768954548}
   - {fileID: 1285690274}
-  - {fileID: 893183815}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1869719711
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1869719709}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 454fb0f2120a241888db4529e2a6695e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomDrag
-  dragArea: {fileID: 1839270862}
-  placementArea: {fileID: 0}
-  blockedAreas: []
-  playerCollider: {fileID: 0}
-  snapTarget: {fileID: 0}
-  snapDistance: 0.8
 --- !u!1 &1890628163
 GameObject:
   m_ObjectHideFlags: 0
@@ -3852,7 +3744,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1890628165}
-  - component: {fileID: 1890628164}
   m_Layer: 0
   m_Name: Room_C
   m_TagString: Untagged
@@ -3860,24 +3751,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1890628164
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1890628163}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 454fb0f2120a241888db4529e2a6695e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomDrag
-  dragArea: {fileID: 235677437}
-  placementArea: {fileID: 0}
-  blockedAreas: []
-  playerCollider: {fileID: 0}
-  snapTarget: {fileID: 0}
-  snapDistance: 0.8
 --- !u!4 &1890628165
 Transform:
   m_ObjectHideFlags: 0

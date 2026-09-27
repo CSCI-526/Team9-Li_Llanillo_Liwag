@@ -511,18 +511,6 @@ public class FourRoomBoard : MonoBehaviour
         return !Overlaps(playerCollider.bounds, areas[index].bounds);
     }
 
-    private Bounds WallBounds(GameObject wall)
-    {
-        // Compute bounds even when the wall is inactive.
-        SpriteRenderer sprite = wall.GetComponent<SpriteRenderer>();
-        Bounds local = sprite.sprite.bounds;
-
-        return new Bounds(
-            wall.transform.TransformPoint(local.center),
-            Vector3.Scale(local.size, wall.transform.lossyScale)
-        );
-    }
-
     private void BeginDrag(int index, Vector3 mouse)
     {
         dragging = index;
