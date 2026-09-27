@@ -45,14 +45,18 @@ public class FourRoomBoard : MonoBehaviour
     private Vector2 pressScreen;
     private Vector3 pressWorld;
     private bool gestureMoved;
-    private string rotationMessage;
-    private float rotationMessageUntil;
+    private string feedbackMessage;
+    private float feedbackMessageUntil;
 
     private Vector3[] initialRoomPositions;
     private Quaternion[] initialRoomRotations;
     private float initialPlayerRotation;
 
+    private float HudScale => Mathf.Max(0.1f,
+        Mathf.Min(Screen.width / 1280f, Screen.height / 720f));
+    private float HudWidth => Screen.width / HudScale;
     private Rect RestartButtonRect => new Rect(16f, 16f, 170f, 42f);
+    private Rect TutorialRect => new Rect(HudWidth - 274f, 16f, 258f, 160f);
 
     private void Start()
     {
@@ -165,8 +169,9 @@ public class FourRoomBoard : MonoBehaviour
         }
 
         Vector2 screen = Mouse.current.position.ReadValue();
-        Vector2 guiMouse = new Vector2(screen.x, Screen.height - screen.y);
-        if (pressedRoom < 0 && dragging < 0 && RestartButtonRect.Contains(guiMouse))
+        Vector2 guiMouse = new Vector2(screen.x, Screen.height - screen.y) / HudScale;
+        if (pressedRoom < 0 && dragging < 0 &&
+            (RestartButtonRect.Contains(guiMouse) || TutorialRect.Contains(guiMouse)))
             return;
 
         Vector3 mouse = sceneCamera.ScreenToWorldPoint(
@@ -223,6 +228,8 @@ public class FourRoomBoard : MonoBehaviour
             gestureMoved = true;
             if (CanDrag(pressedRoom))
                 BeginDrag(pressedRoom, pressWorld);
+            else
+                ShowFeedback("Leave this room before dragging it.");
         }
 
         bool valid = false;
@@ -272,7 +279,7 @@ public class FourRoomBoard : MonoBehaviour
         // Do not rotate either room while the player straddles a passage.
         if (carryPlayer && !ContainsPlayer(index))
         {
-            ShowRotationMessage("Move fully into one room to rotate.");
+            ShowFeedback("Move fully into one room to rotate.");
             return;
         }
 
@@ -306,7 +313,7 @@ public class FourRoomBoard : MonoBehaviour
             playerBody.angularVelocity = previousAngularVelocity;
             RefreshConnections();
             Physics2D.SyncTransforms();
-            ShowRotationMessage("Not enough space to rotate here.");
+            ShowFeedback("Not enough space to rotate here.");
             return;
         }
 
@@ -318,7 +325,7 @@ public class FourRoomBoard : MonoBehaviour
             playerBody.WakeUp();
         }
 
-        rotationMessageUntil = 0f;
+        feedbackMessageUntil = 0f;
     }
 
     private void SetPlayerPose(Vector2 position, float angle)
@@ -399,10 +406,10 @@ public class FourRoomBoard : MonoBehaviour
         return false;
     }
 
-    private void ShowRotationMessage(string message)
+    private void ShowFeedback(string message)
     {
-        rotationMessage = message;
-        rotationMessageUntil = Time.unscaledTime + 1.5f;
+        feedbackMessage = message;
+        feedbackMessageUntil = Time.unscaledTime + 1.5f;
     }
 
     private bool IsPlayerInsideAnyRoom()
@@ -651,8 +658,8 @@ public class FourRoomBoard : MonoBehaviour
         isRestarting = false;
         restartTimer = 0f;
         completed = false;
-        rotationMessage = null;
-        rotationMessageUntil = 0f;
+        feedbackMessage = null;
+        feedbackMessageUntil = 0f;
 
         // Deactivation clears pending movement and jump input.
         playerBody.gameObject.SetActive(false);
@@ -674,13 +681,57 @@ public class FourRoomBoard : MonoBehaviour
 
     private void OnGUI()
     {
+        // Use the same scaled coordinates for drawing and mouse hit testing.
+        Matrix4x4 previousMatrix = GUI.matrix;
+        GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity,
+            new Vector3(HudScale, HudScale, 1f));
+        try
+        {
+            DrawHud();
+        }
+        finally
+        {
+            GUI.matrix = previousMatrix;
+        }
+    }
+
+    private void DrawTutorial()
+    {
+        Rect area = TutorialRect;
+        GUIStyle style = new GUIStyle(GUI.skin.label);
+        style.fontSize = 22;
+        style.alignment = TextAnchor.UpperLeft;
+        style.wordWrap = false;
+        style.padding = new RectOffset(0, 0, 0, 0);
+        style.normal.textColor = new Color(1f, 0.87f, 0.2f, 1f);
+
+        string[] lines =
+        {
+            "A / D: Move",
+            "Space: Jump",
+            "Left Drag: Move Room",
+            "Left Click: Rotate Left",
+            "Right Click: Rotate Right"
+        };
+
+        // Draw only the controls, with no title or background panel.
+        for (int i = 0; i < lines.Length; i++)
+        {
+            GUI.Label(new Rect(area.x, area.y + i * 32f,
+                area.width, 32f), lines[i], style);
+        }
+    }
+
+    private void DrawHud()
+    {
+        DrawTutorial();
         GUIStyle restartStyle = new GUIStyle(GUI.skin.button);
         restartStyle.fontSize = 20;
         if (GUI.Button(RestartButtonRect, "Restart Level", restartStyle))
             RestartLevel();
 
-        bool showRotationMessage = Time.unscaledTime < rotationMessageUntil;
-        if (!completed && !isRestarting && !showRotationMessage)
+        bool showFeedbackMessage = Time.unscaledTime < feedbackMessageUntil;
+        if (!completed && !isRestarting && !showFeedbackMessage)
             return;
 
         GUIStyle style = new GUIStyle(GUI.skin.box);
@@ -688,10 +739,10 @@ public class FourRoomBoard : MonoBehaviour
 
         string message = isRestarting
             ? "You Died — Restarting..."
-            : completed ? "Level Complete" : rotationMessage;
+            : completed ? "Level Complete" : feedbackMessage;
 
         GUI.Box(
-            new Rect(Screen.width * 0.5f - 270f, 20f, 540f, 60f),
+            new Rect(HudWidth * 0.5f - 270f, 20f, 540f, 60f),
             message,
             style
         );
