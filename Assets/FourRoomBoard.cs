@@ -48,10 +48,24 @@ public class FourRoomBoard : MonoBehaviour
     private string rotationMessage;
     private float rotationMessageUntil;
 
+    private Vector3[] initialRoomPositions;
+    private Quaternion[] initialRoomRotations;
+    private float initialPlayerRotation;
+
+    private Rect RestartButtonRect => new Rect(16f, 16f, 170f, 42f);
+
     private void Start()
     {
         playerBody = playerCollider.attachedRigidbody;
         startPosition = playerBody.position;
+        initialPlayerRotation = playerBody.rotation;
+        initialRoomPositions = new Vector3[rooms.Length];
+        initialRoomRotations = new Quaternion[rooms.Length];
+        for (int i = 0; i < rooms.Length; i++)
+        {
+            initialRoomPositions[i] = rooms[i].position;
+            initialRoomRotations[i] = rooms[i].rotation;
+        }
         sceneCamera = Camera.main;
         areas = new SpriteRenderer[4];
         visuals = new SpriteRenderer[4][];
@@ -151,6 +165,10 @@ public class FourRoomBoard : MonoBehaviour
         }
 
         Vector2 screen = Mouse.current.position.ReadValue();
+        Vector2 guiMouse = new Vector2(screen.x, Screen.height - screen.y);
+        if (pressedRoom < 0 && dragging < 0 && RestartButtonRect.Contains(guiMouse))
+            return;
+
         Vector3 mouse = sceneCamera.ScreenToWorldPoint(
             new Vector3(screen.x, screen.y, -sceneCamera.transform.position.z)
         );
@@ -623,8 +641,44 @@ public class FourRoomBoard : MonoBehaviour
         CancelRoomGesture();
     }
 
+    private void RestartLevel()
+    {
+        if (initialRoomPositions == null)
+            return;
+
+        // Cancel any preview before restoring the saved starting layout.
+        CancelRoomGesture();
+        isRestarting = false;
+        restartTimer = 0f;
+        completed = false;
+        rotationMessage = null;
+        rotationMessageUntil = 0f;
+
+        // Deactivation clears pending movement and jump input.
+        playerBody.gameObject.SetActive(false);
+
+        for (int i = 0; i < rooms.Length; i++)
+        {
+            rooms[i].SetPositionAndRotation(initialRoomPositions[i], initialRoomRotations[i]);
+            SetAppearance(i, false, true);
+        }
+
+        RefreshConnections();
+        playerBody.gameObject.SetActive(true);
+        SetPlayerPose(startPosition, initialPlayerRotation);
+        playerBody.linearVelocity = Vector2.zero;
+        playerBody.angularVelocity = 0f;
+        playerBody.WakeUp();
+        Physics2D.SyncTransforms();
+    }
+
     private void OnGUI()
     {
+        GUIStyle restartStyle = new GUIStyle(GUI.skin.button);
+        restartStyle.fontSize = 20;
+        if (GUI.Button(RestartButtonRect, "Restart Level", restartStyle))
+            RestartLevel();
+
         bool showRotationMessage = Time.unscaledTime < rotationMessageUntil;
         if (!completed && !isRestarting && !showRotationMessage)
             return;
